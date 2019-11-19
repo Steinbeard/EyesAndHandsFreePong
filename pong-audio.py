@@ -177,7 +177,7 @@ class Model(object):
         self.pressed_keys = set()  # set has no duplicates
         self.quit_key = pyglet.window.key.Q
         self.speed = 6  # in pixels per frame
-        self.ball_speed = self.speed #* 2.5
+        self.ball_speed = self.speed * 2
         self.WIDTH, self.HEIGHT = DIMENSIONS
         # STATE VARS
         self.paused = False
@@ -281,20 +281,26 @@ class Model(object):
         self.check_if_oob_top_bottom()  # oob: out of bounds
         self.check_if_oob_sides()
         self.check_if_paddled()
+        # Notify if at halfway mark
+        if ((self.WIDTH / 2 + 4) > self.ball.x > (self.WIDTH / 2 - 4)):
+        	playsound("HalfWay.wav", False)
+        	print("Halfway")
+        elif ((self.WIDTH / 4 + 2) > self.ball.x > (self.WIDTH / 4 - 2)):
+        	playsound("ThreeQuarters.wav", False)
+        	print("Three quarters")
 
     def echolocate(self):
-       	print(self.ball.y)
+       	# Represent y with pitch
        	current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
-       	current_volm = self.ball.x
-       	# Change pitch
         y_tone = librosa.effects.pitch_shift(self.sfx_y, self.sfx_sr, n_steps=current_tone+2)
-        write('toneshift.wav', self.sfx_sr, y_tone)
-        # Change volume
-        #song = AudioSegment.from_wav("toneshift.wav") #OSX: brew install libav; LINUX: sudo apt-get install libav-tools
-        #song = song - current_volm
-        #song.export(path+"volume_and_tone_shift.wav", "wav")
+        # Represent x with volume
+        if (780 > self.ball.x > 30):
+        	y_volume = 0.1 * y_tone * self.WIDTH / self.ball.x
+        else:
+        	y_volume = y_tone * 0
+        write('toneshift.wav', self.sfx_sr, y_volume)
         playsound('toneshift.wav', False)
-        print("8th frame")
+        print("echolocated at " + str(int(self.ball.x)) + ", " + str(int(self.ball.y)))
 
     def update(self):
         """Work through all pressed keys, update and call update_ball."""
@@ -340,7 +346,7 @@ class Model(object):
 
         self.update_ball()
         self.frame_counter += 1
-        if(self.frame_counter % 8 == 0):
+        if(self.frame_counter % 3 == 0):
         	self.echolocate()
         label.text = str(p1_score)+':'+str(p2_score)
 
