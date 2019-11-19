@@ -40,6 +40,9 @@ import pyaudio
 import wave
 import librosa #For pitch shifting (added by Daniel)
 import sounddevice as sd #for playing back numpy array audio (added by Daniel)
+from pydub import AudioSegment #for changing volume
+
+from scipy.io.wavfile import write #TEST
 # -------------------------------------#
 
 quit = False
@@ -69,9 +72,19 @@ pitch = 0
 
 #play some fun sounds?
 def hit():
-    playsound('hit.wav', False)
+    playsound('thunk.wav', False)
 
 hit()
+
+def wall_bounce():
+	playsound('boing2.wav', False)
+
+def score_sound():
+	playsound('fanfare_x.wav', False)
+
+def loss_sound():
+	playsound('aww.wav', False)
+
 
 # speech recognition functions using google api
 # -------------------------------------#
@@ -200,20 +213,24 @@ class Model(object):
             illegal_movement = 0 - (b.y - b.TO_SIDE)
             b.y = 0 + b.TO_SIDE + illegal_movement
             b.vec_y *= -1
+            wall_bounce()
         elif b.y + b.TO_SIDE > self.HEIGHT:
             illegal_movement = self.HEIGHT - (b.y + b.TO_SIDE)
             b.y = self.HEIGHT - b.TO_SIDE + illegal_movement
             b.vec_y *= -1
+            wall_bounce()
 
     def check_if_oob_sides(self):
         global p2_score, p1_score
         """Called by update_ball to reset a ball left/right of the screen."""
         b = self.ball
         if b.x + b.TO_SIDE < 0:  # leave on left
-            self.reset_ball(1)
-            p2_score+=1
+        	p2_score+=1
+        	loss_sound()
+        	self.reset_ball(1)
         elif b.x - b.TO_SIDE > self.WIDTH:  # leave on right
             p1_score+=1
+            score_sound()
             self.reset_ball(0)
 
     def check_if_paddled(self): 
@@ -266,10 +283,18 @@ class Model(object):
         self.check_if_paddled()
 
     def echolocate(self):
-    	print(self.ball.y)
-    	y_tone = librosa.effects.pitch_shift(self.sfx_y, self.sfx_sr, n_steps=4)
-    	sd.play(y_tone, self.sfx_sr)
-    	print("24th frame")
+       	print(self.ball.y)
+       	current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
+       	current_volm = self.ball.x
+       	# Change pitch
+        y_tone = librosa.effects.pitch_shift(self.sfx_y, self.sfx_sr, n_steps=current_tone+2)
+        write('toneshift.wav', self.sfx_sr, y_tone)
+        # Change volume
+        #song = AudioSegment.from_wav("toneshift.wav") #OSX: brew install libav; LINUX: sudo apt-get install libav-tools
+        #song = song - current_volm
+        #song.export(path+"volume_and_tone_shift.wav", "wav")
+        playsound('toneshift.wav', False)
+        print("8th frame")
 
     def update(self):
         """Work through all pressed keys, update and call update_ball."""
@@ -315,7 +340,7 @@ class Model(object):
 
         self.update_ball()
         self.frame_counter += 1
-        if(self.frame_counter % 24 == 0):
+        if(self.frame_counter % 8 == 0):
         	self.echolocate()
         label.text = str(p1_score)+':'+str(p2_score)
 
