@@ -43,6 +43,8 @@ import sounddevice as sd #for playing back numpy array audio (added by Daniel)
 from pydub import AudioSegment #for changing volume
 
 from scipy.io.wavfile import write #TEST
+
+from synthesizer import Player, Synthesizer, Waveform
 # -------------------------------------#
 
 quit = False
@@ -72,18 +74,23 @@ pitch = 0
 
 #play some fun sounds?
 def hit():
-    playsound('thunk.wav', False)
+    playsound('thunk.wav', True)
 
 hit()
 
 def wall_bounce():
-	playsound('boing2.wav', False)
+	playsound('boing2.wav', True)
 
 def score_sound():
-	playsound('fanfare_x.wav', False)
+	playsound('fanfare_x.wav', True)
 
 def loss_sound():
-	playsound('aww.wav', False)
+	playsound('aww.wav', True)
+
+
+player = Player()
+player.open_stream()
+synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=1.0, use_osc2=False)
 
 
 # speech recognition functions using google api
@@ -177,7 +184,7 @@ class Model(object):
         self.pressed_keys = set()  # set has no duplicates
         self.quit_key = pyglet.window.key.Q
         self.speed = 6  # in pixels per frame
-        self.ball_speed = self.speed * 2
+        self.ball_speed = self.speed * 1.5
         self.WIDTH, self.HEIGHT = DIMENSIONS
         # STATE VARS
         self.paused = False
@@ -283,23 +290,29 @@ class Model(object):
         self.check_if_paddled()
         # Notify if at halfway mark
         if ((self.WIDTH / 2 + 4) > self.ball.x > (self.WIDTH / 2 - 4)):
-        	playsound("HalfWay.wav", False)
+        	#playsound("HalfWay.wav", True)
         	print("Halfway")
         elif ((self.WIDTH / 4 + 2) > self.ball.x > (self.WIDTH / 4 - 2)):
-        	playsound("ThreeQuarters.wav", False)
+        	#playsound("ThreeQuarters.wav", True)
         	print("Three quarters")
 
     def echolocate(self):
        	# Represent y with pitch
        	current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
-        y_tone = librosa.effects.pitch_shift(self.sfx_y, self.sfx_sr, n_steps=current_tone+2)
-        # Represent x with volume
+        current_tone = 440 * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
+        print(current_tone)
+        # y_tone = librosa.effects.pitch_shift(self.sfx_y, self.sfx_sr, n_steps=current_tone+2)
+        # # Represent x with volume
         if (780 > self.ball.x > 30):
-        	y_volume = 0.1 * y_tone * self.WIDTH / self.ball.x
+            y_volume = 0.2 * self.WIDTH / self.ball.x
         else:
-        	y_volume = y_tone * 0
-        write('toneshift.wav', self.sfx_sr, y_volume)
-        playsound('toneshift.wav', False)
+        	y_volume = 0
+        # write('toneshift.wav', self.sfx_sr, y_volume)
+        # playsound('toneshift.wav', False)
+        global player
+        # global synthesizer
+        synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=y_volume, use_osc2=False)
+        player.play_wave(synthesizer.generate_constant_wave(current_tone, 0.1))
         print("echolocated at " + str(int(self.ball.x)) + ", " + str(int(self.ball.y)))
 
     def update(self):
