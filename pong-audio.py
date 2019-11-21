@@ -23,6 +23,7 @@ import random
 import pyglet
 import sys
 from playsound import playsound
+from os import system
 
 # speech recognition library
 # -------------------------------------#
@@ -262,17 +263,71 @@ class Model(object):
     def echolocate(self):
         # Represent y with pitch
         global center_pitch
-        current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
-        current_tone = center_pitch * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
+        current_tone = 0
+
+        #play a2
+        if (self.ball.y > 392):
+            current_tone = 90
+        elif (self.ball.y > 364 and self.ball.y < 392):
+            current_tone = 110
+        #playb2
+        elif (self.ball.y > 336 and self.ball.y < 364):
+            current_tone = 123
+        #playc3
+        elif (self.ball.y > 308 and self.ball.y < 336):
+            current_tone = 130
+        #playd3
+        elif (self.ball.y > 280 and self.ball.y < 308):
+            current_tone = 146
+        #playe3
+        elif (self.ball.y > 252 and self.ball.y < 280):
+            current_tone = 164
+        #playf3
+        elif (self.ball.y > 224 and self.ball.y < 252):
+            current_tone = 174
+        #playg3
+        elif (self.ball.y > 196 and self.ball.y < 224):
+            current_tone = 196
+        #playa3
+        elif (self.ball.y > 168 and self.ball.y < 196):
+            current_tone = 220
+        #playb3
+        elif (self.ball.y > 140 and self.ball.y < 168):
+            current_tone = 246
+        #playc4
+        elif (self.ball.y > 112 and self.ball.y < 140):
+            current_tone = 261
+        #playd4
+        elif (self.ball.y > 84 and self.ball.y < 112):
+            current_tone = 293
+        #playe4
+        elif (self.ball.y > 56 and self.ball.y < 84):
+            current_tone = 329
+        #playf4
+        elif (self.ball.y > 28 and self.ball.y < 56):
+            current_tone = 349
+        #playg4
+        elif (self.ball.y > 0 and self.ball.y < 28):
+            current_tone = 392
+        #playa4
+        elif (self.ball.y > 308 and self.ball.y < 364):
+            current_tone = 440
+
+       
+        else:
+            current_tone = 0
+        #current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
+        #current_tone = center_pitch * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
         print("Ball's tone: " + str(current_tone))
+        print("Ball's height: " + str(self.ball.x))
         if (780 > self.ball.x > 30):
-            y_volume = 0.2 * self.WIDTH / self.ball.x
+            y_volume = 0.3 * self.WIDTH / self.ball.x
         else:
             y_volume = 0
         global player
         synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=y_volume, use_osc2=False)
         player.play_wave(synthesizer.generate_constant_wave(current_tone, 0.1))
-        #print("echolocated at " + str(int(self.ball.x)) + ", " + str(int(self.ball.y)))
+        print("echolocated at " + str(int(self.ball.x)) + ", " + str(int(self.ball.y)))
 
 # -------------- Ball position: you can find it here -------
     def update_ball(self):
@@ -292,6 +347,9 @@ class Model(object):
         self.check_if_oob_top_bottom()  # oob: out of bounds
         self.check_if_oob_sides()
         self.check_if_paddled()
+
+        if ((self.WIDTH / 2 + 2) > self.ball.x > (self.WIDTH / 2 - 2)):
+            playsound("HalfWay.wav", True)
 
 
     def update(self):
@@ -313,50 +371,60 @@ class Model(object):
         global p1_pitch
         global center_pitch
         old_y = p1.y
-        if (30 < p1_pitch < 70):
+        if (30 < p1_pitch < 105):
             p1.y = 0
-        #this interval contains D2
-        elif (p1_pitch > 70 and p1_pitch < 78):
-            p1.y = 392
-        #this interval contains E2
-        elif (p1_pitch > 78 and p1_pitch < 85):
-            p1.y = 364
-        #this interval contains F2
-        elif (p1_pitch > 85 and p1_pitch < 93):
-            p1.y = 336
-        #this interval contains G2
-        elif (p1_pitch > 93 and p1_pitch < 105):
-            p1.y = 308
+
         #this interval contains A2
         elif (p1_pitch > 105 and p1_pitch < 118):
-            p1.y = 280
+            p1.y = 392
         #this interval contains B2
         elif (p1_pitch > 118 and p1_pitch < 126):
-            p1.y = 252
+            p1.y = 364
         #this interval contains C3
         elif (p1_pitch > 126 and p1_pitch < 140):
-            p1.y = 224
+            p1.y = 336
         #this interval contains D3
         elif (p1_pitch >  140 and p1_pitch < 158):
-            p1.y = 196
+            p1.y = 308
         #this interval contains E3
         elif (p1_pitch > 158 and p1_pitch < 170):
-            p1.y = 168
+            p1.y = 280
         #this interval contains F3
         elif (p1_pitch > 170 and p1_pitch < 185):
-            p1.y = 140
+            p1.y = 252
         #this interval contains G3
         elif (p1_pitch > 185 and p1_pitch < 210):
-            p1.y = 112
+            p1.y = 224
         #this interval contains A3
         elif (p1_pitch > 210 and p1_pitch < 235):
-            p1.y = 84
+            p1.y = 196
         #this interval contains B3
         elif (p1_pitch > 235 and p1_pitch < 250):
-            p1.y = 56
+            p1.y = 168
         #this interval contains C4
-        elif (p1_pitch > 250):
+        elif (p1_pitch > 250 and p1_pitch < 277):
+            p1.y = 140
+        #this interval contains D4
+        elif (p1_pitch > 277 and p1_pitch < 311):
+            p1.y = 112
+        #this interval contains E4
+        elif (p1_pitch > 311 and p1_pitch < 335):
+            p1.y = 84
+        #this interval contains F4
+        elif (p1_pitch > 335 and p1_pitch < 365):
+            p1.y = 56
+        #this interval contains G4
+        elif (p1_pitch > 365 and p1_pitch < 410):
             p1.y = 28
+        #this interval contains A4
+        elif (p1_pitch > 410):
+            p1.y = 0
+        if (p1_pitch > 0):
+            print("paddle pitch:" + str(p1_pitch))
+            print("paddle height:" + str(p1.y))
+
+
+
         p1.last_movements.append(p1.y - old_y)
         if (p1.y - old_y != 0):
             print("Beeep")
