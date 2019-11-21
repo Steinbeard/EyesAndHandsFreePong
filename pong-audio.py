@@ -65,6 +65,7 @@ player.open_stream()
 
 #input
 p1_pitch = 440
+center_pitch = 220
 
 # keeping score of points:
 p1_score = 0
@@ -251,9 +252,10 @@ class Model(object):
 
     def echolocate(self):
         # Represent y with pitch
+        global center_pitch
         current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
-        current_tone = 440 * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
-        #print(current_tone)
+        current_tone = center_pitch * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
+        print("Ball's tone: " + str(current_tone))
         if (780 > self.ball.x > 30):
             y_volume = 0.2 * self.WIDTH / self.ball.x
         else:
@@ -300,15 +302,14 @@ class Model(object):
         p1 = self.players[0]
         p1.last_movements.pop(0)
         global p1_pitch
+        global center_pitch
         if (p1_pitch > 0):
             old_y = p1.y
-            p1.y = p1_pitch
-            # new_y = log(p1_pitch, 12)
-            # self.ball.y = (current_tone + 8) * self.HEIGHT/16
-            # 440
-
-            # current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
-            # current_tone = 440 * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
+            #new_y = math.log(p1_pitch/440, 12)
+            new_y = self.HEIGHT * (2 - 3 * math.log(p1_pitch/center_pitch, 2))/4
+            print("Player's pitch: " + str(p1_pitch))
+            #print(new_y)
+            p1.y = new_y
             p1.last_movements.append(p1.y - old_y)
         else: 
             p1.last_movements.append(0)
@@ -338,7 +339,7 @@ class Model(object):
             # but append _a number_ zero here. it's not the same.
             p2.last_movements.append(0)
         self.frame_counter += 1
-        if(self.frame_counter % 14 == 0): #i: frame count
+        if(self.frame_counter % 8 == 0): #i: frame count
             self.echolocate()
         self.update_ball()
         label.text = str(p1_score)+':'+str(p2_score)
