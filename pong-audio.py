@@ -76,6 +76,13 @@ def hit():
     playsound('hit.wav', False)
 
 hit()
+
+def score_sound():
+    playsound('fanfare_x.wav', True)
+
+def loss_sound():
+    playsound('aww.wav', True)
+
 # speech recognition functions using google api
 # -------------------------------------#
 def listen_to_speech():
@@ -216,9 +223,11 @@ class Model(object):
         b = self.ball
         if b.x + b.TO_SIDE < 0:  # leave on left
             self.reset_ball(1)
+            loss_sound()
             p2_score+=1
         elif b.x - b.TO_SIDE > self.WIDTH:  # leave on right
             p1_score+=1
+            score_sound()
             self.reset_ball(0)
 
     def check_if_paddled(self): 
@@ -350,7 +359,10 @@ class Model(object):
             p1.y = 28
         p1.last_movements.append(p1.y - old_y)
         if (p1.y - old_y != 0):
-            print("Beeeeeeeeeep")
+            print("Beeep")
+            # global player
+            # synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=5, use_osc2=False)
+            # player.play_wave(synthesizer.generate_constant_wave(p1_pitch, 0.2))
            
         # ----------------- DO NOT CHANGE BELOW ----------------
         # player 2: the other user controls the right player by O/L
