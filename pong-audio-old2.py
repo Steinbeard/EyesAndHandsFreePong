@@ -303,52 +303,27 @@ class Model(object):
         p1.last_movements.pop(0)
         global p1_pitch
         global center_pitch
-        old_y = p1.y
-        if (30 < p1_pitch < 70):
-            p1.y = 0
-        #this interval contains D2
-        elif (p1_pitch > 70 and p1_pitch < 78):
-            p1.y = 28
-        #this interval contains E2
-        elif (p1_pitch > 78 and p1_pitch < 85):
-            p1.y = 56
-        #this interval contains F2
-        elif (p1_pitch > 85 and p1_pitch < 93):
-            p1.y = 84
-        #this interval contains G2
-        elif (p1_pitch > 93 and p1_pitch < 105):
-            p1.y = 112
-        #this interval contains A2
-        elif (p1_pitch > 105 and p1_pitch < 118):
-            p1.y = 140
-        #this interval contains B2
-        elif (p1_pitch > 118 and p1_pitch < 126):
-            p1.y = 168
-        #this interval contains C3
-        elif (p1_pitch > 126 and p1_pitch < 140):
-            p1.y = 196
-        #this interval contains D3
-        elif (p1_pitch >  140 and p1_pitch < 158):
-            p1.y = 224
-        #this interval contains E3
-        elif (p1_pitch > 158 and p1_pitch < 170):
-            p1.y = 252
-        #this interval contains F3
-        elif (p1_pitch > 170 and p1_pitch < 185):
-            p1.y = 280
-        #this interval contains G3
-        elif (p1_pitch > 185 and p1_pitch < 210):
-            p1.y = 308
-        #this interval contains A3
-        elif (p1_pitch > 210 and p1_pitch < 235):
-            p1.y = 336
-        #this interval contains B3
-        elif (p1_pitch > 235 and p1_pitch < 250):
-            p1.y = 364
-        #this interval contains C4
-        elif (p1_pitch > 250):
-            p1.y = 392
-        p1.last_movements.append(p1.y - old_y)
+        if (p1_pitch > center_pitch * 2):
+            old_y = p1.y
+            
+        elif (p1_pitch > 0):
+            old_y = p1.y
+            new_y = self.HEIGHT * (2 - 3 * math.log(p1_pitch/center_pitch, 2))/4
+            print("Player's pitch: " + str(p1_pitch))
+            p1.y = new_y
+            p1.last_movements.append(p1.y - old_y)
+        else: 
+            p1.last_movements.append(0)
+        # if p1.up_key in pks and p1.down_key not in pks: #change this to voice input
+        #     p1.y -= self.speed
+        #     p1.last_movements.append(-self.speed)
+        # elif p1.up_key not in pks and p1.down_key in pks: #change this to voice input
+        #     p1.y += self.speed
+        #     p1.last_movements.append(+self.speed)
+        # else:
+        #     # notice how we popped from _place_ zero,
+        #     # but append _a number_ zero here. it's not the same.
+        #     p1.last_movements.append(0)
            
         # ----------------- DO NOT CHANGE BELOW ----------------
         # player 2: the other user controls the right player by O/L
