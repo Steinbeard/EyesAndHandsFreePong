@@ -65,7 +65,7 @@ player.open_stream()
 
 #input
 p1_pitch = 440
-center_pitch = 220
+center_pitch = 130.81
 
 # keeping score of points:
 p1_score = 0
@@ -308,47 +308,49 @@ class Model(object):
             p1.y = 0
         #this interval contains D2
         elif (p1_pitch > 70 and p1_pitch < 78):
-            p1.y = 28
+            p1.y = 392
         #this interval contains E2
         elif (p1_pitch > 78 and p1_pitch < 85):
-            p1.y = 56
+            p1.y = 364
         #this interval contains F2
         elif (p1_pitch > 85 and p1_pitch < 93):
-            p1.y = 84
+            p1.y = 336
         #this interval contains G2
         elif (p1_pitch > 93 and p1_pitch < 105):
-            p1.y = 112
+            p1.y = 308
         #this interval contains A2
         elif (p1_pitch > 105 and p1_pitch < 118):
-            p1.y = 140
+            p1.y = 280
         #this interval contains B2
         elif (p1_pitch > 118 and p1_pitch < 126):
-            p1.y = 168
+            p1.y = 252
         #this interval contains C3
         elif (p1_pitch > 126 and p1_pitch < 140):
-            p1.y = 196
+            p1.y = 224
         #this interval contains D3
         elif (p1_pitch >  140 and p1_pitch < 158):
-            p1.y = 224
+            p1.y = 196
         #this interval contains E3
         elif (p1_pitch > 158 and p1_pitch < 170):
-            p1.y = 252
+            p1.y = 168
         #this interval contains F3
         elif (p1_pitch > 170 and p1_pitch < 185):
-            p1.y = 280
+            p1.y = 140
         #this interval contains G3
         elif (p1_pitch > 185 and p1_pitch < 210):
-            p1.y = 308
+            p1.y = 112
         #this interval contains A3
         elif (p1_pitch > 210 and p1_pitch < 235):
-            p1.y = 336
+            p1.y = 84
         #this interval contains B3
         elif (p1_pitch > 235 and p1_pitch < 250):
-            p1.y = 364
+            p1.y = 56
         #this interval contains C4
         elif (p1_pitch > 250):
-            p1.y = 392
+            p1.y = 28
         p1.last_movements.append(p1.y - old_y)
+        if (p1.y - old_y != 0):
+            print("Beeeeeeeeeep")
            
         # ----------------- DO NOT CHANGE BELOW ----------------
         # player 2: the other user controls the right player by O/L
