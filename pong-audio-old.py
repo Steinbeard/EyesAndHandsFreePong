@@ -38,8 +38,14 @@ import aubio
 import numpy as num
 import pyaudio
 import wave
-# -------------------------------------#
+import librosa #For pitch shifting (added by Daniel)
+import sounddevice as sd #for playing back numpy array audio (added by Daniel)
+from pydub import AudioSegment #for changing volume
+
+from scipy.io.wavfile import write #TEST
+
 from synthesizer import Player, Synthesizer, Waveform
+# -------------------------------------#
 
 quit = False
 debug = 1
@@ -59,22 +65,34 @@ pDetection = aubio.pitch("default", 2048,
 pDetection.set_unit("Hz")
 pDetection.set_silence(-40)
 # -------------------------------------#
-# Synthesizer player
-player = Player()
-player.open_stream()
-
-#input
-p1_pitch = 440
-
 # keeping score of points:
 p1_score = 0
 p2_score = 0
 
+# Global value for pitch
+pitch = 0
+
 #play some fun sounds?
 def hit():
-    playsound('hit.wav', False)
+    playsound('thunk.wav', True)
 
 hit()
+
+def wall_bounce():
+	playsound('boing2.wav', True)
+
+def score_sound():
+	playsound('fanfare_x.wav', True)
+
+def loss_sound():
+	playsound('aww.wav', True)
+
+
+player = Player()
+player.open_stream()
+synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=1.0, use_osc2=False)
+
+
 # speech recognition functions using google api
 # -------------------------------------#
 def listen_to_speech():
@@ -119,10 +137,7 @@ def sense_microphone():
         volume = "{:.6f}".format(volume)
 
         # uncomment these lines if you want pitch or volume
-        #print("p"+str(pitch))
-        global p1_pitch
-        p1_pitch = pitch
-
+        # print("p"+str(pitch))
         # print("v"+str(volume))
 # -------------------------------------#
 
@@ -169,12 +184,13 @@ class Model(object):
         self.pressed_keys = set()  # set has no duplicates
         self.quit_key = pyglet.window.key.Q
         self.speed = 6  # in pixels per frame
-        self.ball_speed = self.speed #* 2.5
+        self.ball_speed = self.speed * 1.5
         self.WIDTH, self.HEIGHT = DIMENSIONS
         # STATE VARS
         self.paused = False
         self.i = 0  # "frame count" for debug
         self.frame_counter = 0
+        self.sfx_y, self.sfx_sr = librosa.load('BruhSoundEffect#2.wav', sr=16000)
 
     def reset_ball(self, who_scored):
         """Place the ball anew on the loser's side."""
@@ -204,20 +220,24 @@ class Model(object):
             illegal_movement = 0 - (b.y - b.TO_SIDE)
             b.y = 0 + b.TO_SIDE + illegal_movement
             b.vec_y *= -1
+            wall_bounce()
         elif b.y + b.TO_SIDE > self.HEIGHT:
             illegal_movement = self.HEIGHT - (b.y + b.TO_SIDE)
             b.y = self.HEIGHT - b.TO_SIDE + illegal_movement
             b.vec_y *= -1
+            wall_bounce()
 
     def check_if_oob_sides(self):
         global p2_score, p1_score
         """Called by update_ball to reset a ball left/right of the screen."""
         b = self.ball
         if b.x + b.TO_SIDE < 0:  # leave on left
-            self.reset_ball(1)
-            p2_score+=1
+        	p2_score+=1
+        	loss_sound()
+        	self.reset_ball(1)
         elif b.x - b.TO_SIDE > self.WIDTH:  # leave on right
             p1_score+=1
+            score_sound()
             self.reset_ball(0)
 
     def check_if_paddled(self): 
@@ -249,19 +269,6 @@ class Model(object):
             b.vec_y = math.cos(angle)
             b.vec_x = - (1**2 - b.vec_y**2) ** 0.5
 
-    def echolocate(self):
-        # Represent y with pitch
-        current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
-        current_tone = 440 * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
-        #print(current_tone)
-        if (780 > self.ball.x > 30):
-            y_volume = 0.2 * self.WIDTH / self.ball.x
-        else:
-            y_volume = 0
-        global player
-        synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=y_volume, use_osc2=False)
-        player.play_wave(synthesizer.generate_constant_wave(current_tone, 0.1))
-        #print("echolocated at " + str(int(self.ball.x)) + ", " + str(int(self.ball.y)))
 
 # -------------- Ball position: you can find it here -------
     def update_ball(self):
@@ -281,7 +288,32 @@ class Model(object):
         self.check_if_oob_top_bottom()  # oob: out of bounds
         self.check_if_oob_sides()
         self.check_if_paddled()
+        # Notify if at halfway mark
+        if ((self.WIDTH / 2 + 4) > self.ball.x > (self.WIDTH / 2 - 4)):
+        	#playsound("HalfWay.wav", True)
+        	print("Halfway")
+        elif ((self.WIDTH / 4 + 2) > self.ball.x > (self.WIDTH / 4 - 2)):
+        	#playsound("ThreeQuarters.wav", True)
+        	print("Three quarters")
 
+    def echolocate(self):
+       	# Represent y with pitch
+       	current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
+        current_tone = 440 * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
+        print(current_tone)
+        # y_tone = librosa.effects.pitch_shift(self.sfx_y, self.sfx_sr, n_steps=current_tone+2)
+        # # Represent x with volume
+        if (780 > self.ball.x > 30):
+            y_volume = 0.2 * self.WIDTH / self.ball.x
+        else:
+        	y_volume = 0
+        # write('toneshift.wav', self.sfx_sr, y_volume)
+        # playsound('toneshift.wav', False)
+        global player
+        # global synthesizer
+        synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=y_volume, use_osc2=False)
+        player.play_wave(synthesizer.generate_constant_wave(current_tone, 0.1))
+        print("echolocated at " + str(int(self.ball.x)) + ", " + str(int(self.ball.y)))
 
     def update(self):
         """Work through all pressed keys, update and call update_ball."""
@@ -299,29 +331,16 @@ class Model(object):
         # player 1: the user controls the left player by W/S but you should change it to VOICE input
         p1 = self.players[0]
         p1.last_movements.pop(0)
-        global p1_pitch
-        if (p1_pitch > 0):
-            old_y = p1.y
-            p1.y = p1_pitch
-            # new_y = log(p1_pitch, 12)
-            # self.ball.y = (current_tone + 8) * self.HEIGHT/16
-            # 440
-
-            # current_tone = 8-(self.ball.y / (self.HEIGHT/16)) #Divide height into two octaves (16 st)
-            # current_tone = 440 * ((2 ** (1/12)) ** current_tone) #Calculate frequency for note n tones from C4
-            p1.last_movements.append(p1.y - old_y)
-        else: 
+        if p1.up_key in pks and p1.down_key not in pks: #change this to voice input
+            p1.y -= self.speed
+            p1.last_movements.append(-self.speed)
+        elif p1.up_key not in pks and p1.down_key in pks: #change this to voice input
+            p1.y += self.speed
+            p1.last_movements.append(+self.speed)
+        else:
+            # notice how we popped from _place_ zero,
+            # but append _a number_ zero here. it's not the same.
             p1.last_movements.append(0)
-        # if p1.up_key in pks and p1.down_key not in pks: #change this to voice input
-        #     p1.y -= self.speed
-        #     p1.last_movements.append(-self.speed)
-        # elif p1.up_key not in pks and p1.down_key in pks: #change this to voice input
-        #     p1.y += self.speed
-        #     p1.last_movements.append(+self.speed)
-        # else:
-        #     # notice how we popped from _place_ zero,
-        #     # but append _a number_ zero here. it's not the same.
-        #     p1.last_movements.append(0)
            
         # ----------------- DO NOT CHANGE BELOW ----------------
         # player 2: the other user controls the right player by O/L
@@ -337,10 +356,11 @@ class Model(object):
             # notice how we popped from _place_ zero,
             # but append _a number_ zero here. it's not the same.
             p2.last_movements.append(0)
-        self.frame_counter += 1
-        if(self.frame_counter % 14 == 0): #i: frame count
-            self.echolocate()
+
         self.update_ball()
+        self.frame_counter += 1
+        # if(self.frame_counter % 3 == 0):
+        # 	self.echolocate()
         label.text = str(p1_score)+':'+str(p2_score)
 
 class Controller(object):
