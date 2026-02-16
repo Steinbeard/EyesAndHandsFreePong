@@ -1,5 +1,5 @@
 aubio==0.4.9
-future==0.18.2
+future==1.0.0
 numpy==1.17.4
 playsound==1.2.2
 PyAudio==0.2.11
